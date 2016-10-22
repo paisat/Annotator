@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/Annotator.iml" filepath="$PROJECT_DIR$/.idea/Annotator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../LinearRegression/.idea/LinearRegression.iml" filepath="$PROJECT_DIR$/../LinearRegression/.idea/LinearRegression.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../MLHw3/.idea/MLHw3.iml" filepath="$PROJECT_DIR$/../MLHw3/.idea/MLHw3.iml" />
+    </modules>
+  </component>
+</project>
