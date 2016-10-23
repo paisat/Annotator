@@ -20,8 +20,11 @@ from TextAnnotator import views
 urlpatterns = [
     url(r'^index/', views.index, name='index'),
     url(r'^admin/', admin.site.urls),
+    url(r'^users/', views.user),
+    url(r'^auth-token/',views.get_auth_token),
+    url(r'^auth-token-verify/$',views.verify_token)
     # get random raw_data given a language
     # url(r'^(?P<language>[a-z|A-Z]+)/get_document/$', views.get_document),
     # url(r'^post_annotations/', views.post_annotations),
-    url(r'^text_document/(?P<id>[0-9]+)/$',views.text_document)
+    # url(r'^text_document/(?P<id>[0-9]+)/$',views.text_document)
 ]

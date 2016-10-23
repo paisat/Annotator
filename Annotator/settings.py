@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
@@ -27,7 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'TextAnnotator',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -71,6 +71,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Annotator.wsgi.application'
 
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+}
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
@@ -81,7 +84,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
@@ -101,6 +103,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+JWT_SETTINGS = {
+
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300),
+    'JWT_SECRET_KEY': SECRET_KEY,
+    'JWT_ALGORITHM': 'HS256',
+    'AUTH_HEADER_PREFIX' : 'JWT',
+
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.10/topics/i18n/
@@ -115,7 +125,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
@@ -127,4 +136,5 @@ STATICFILES_DIRS = (
 STATIC_URL = '/static/'
 
 from mongoengine import connect
+
 connect('Annotator')
