@@ -26,7 +26,8 @@ urlpatterns = [
     url(r'^login/', views.login),
     url(r'^account/', views.account),
     url(r'^user/language/(?P<language>[a-z|A-Z]+)/$', views.doc_by_language),
-    url(r'^user/(?P<user_id>[0-9|a-z|A-Z]+)/action/(?P<action>[a-z|A-Z]+)/$', views.save_doc)
+    url(r'^user/(?P<user_id>[0-9|a-z|A-Z]+)/action/(?P<action>[a-z|A-Z]+)/$', views.save_doc),
+    url(r'^user/(?P<user_id>[0-9|a-z|A-Z]+)/document/$', views.assigned_doc)
     # get random raw_data given a language
     # url(r'^(?P<language>[a-z|A-Z]+)/get_document/$', views.get_document),
     # url(r'^post_annotations/', views.post_annotations),

@@ -183,11 +183,12 @@ def doc_by_language(request, language):
             return HttpResponse({})
         num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
         if num_of_lang_docs < 1:
-            return HttpResponse({})
+            s = json.loads("[]")
+            return HttpResponse(s)
 
         if user.doc_assigned != 0:
             doc = Raw_documents.objects.filter(id=user.doc_assigned)
-            s = json.loads(doc.to_json())
+            s = json.loads("["+doc.to_json()+"]")
             return HttpResponse(s)
 
         found = False
@@ -204,10 +205,11 @@ def doc_by_language(request, language):
             doc[i].update(assigned=True)
             doc[i].update(user_assigned=user)
             user.update(doc_assigned=int(doc[i].id))
-            s = json.loads(doc.to_json())
+            s = json.loads("["+doc.to_json()+"]")
             return HttpResponse(s)
         else:
-            return HttpResponse({})
+            s = json.loads("[]")
+            return HttpResponse(s)
     except exceptions.AuthenticationFailed:
         return HttpResponseRedirect("/login/")
 
@@ -219,14 +221,16 @@ def save_doc(request, user_id, action):
         l = len(user)
         u_id = user[0].id
     except Exception:
-        return HttpResponse("No such user in the database.")
+        s = json.loads("[]")
+        return HttpResponse(s)
 
     try:
         doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
         l = len(doc)
         doc_id = doc[0].id
     except Exception:
-        return HttpResponse("No doc assigned for this user.")
+        s = json.loads("[]")
+        return HttpResponse(s)
 
     if action.lower() == "next":
         doc.update(translations=str(data['translations']))
@@ -237,3 +241,21 @@ def save_doc(request, user_id, action):
         doc.update(user_assigned=None)
         user.update(doc_assigned=0)
         return HttpResponse("Annotations discarded")
+
+def assigned_doc(request,user_id):
+    try:
+        user = User.objects.filter(id=unicode(user_id))
+        l = len(user)
+        u_id = user[0].id
+    except Exception:
+        s = json.loads("[]")
+        return HttpResponse(s)
+
+    if user[0].doc_assigned != 0:
+        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+        s = json.loads("["+doc.to_json()+"]")
+        return HttpResponse(s)
+    else:
+        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+        s = json.loads("["+doc.to_json()+"]")
+        return HttpResponse(s)
