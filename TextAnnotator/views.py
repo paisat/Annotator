@@ -1,20 +1,20 @@
-from django.http import HttpResponse
-from django.http import JsonResponse
-from django.shortcuts import render
-from TextAnnotator.models import User
 import json
-import bcrypt
-import jwt
-from django.views.decorators.csrf import csrf_exempt
-import Annotator.settings as settings
-import datetime
-from rest_framework import exceptions
-from django.http import HttpResponseRedirect
-from TextAnnotator.models import Raw_documents
 import random
-from django.views.decorators.csrf import csrf_protect
+
+import bcrypt
+import datetime
+import jwt
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.core import serializers
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import exceptions
+
+import Annotator.settings as settings
+from TextAnnotator.models import Raw_documents
+from TextAnnotator.models import User
+
+
 @csrf_exempt
 def index(request):
     try:
@@ -22,7 +22,6 @@ def index(request):
         return render(request, 'TextAnnotator/annotate.html')
     except exceptions.AuthenticationFailed:
         return HttpResponseRedirect("/login/")
-
 
 
 def user(request):
@@ -174,30 +173,27 @@ def create_http_message(msg, status_code):
 
     return HttpResponse(json.dumps(message), status=status_code)
 
-def doc_by_language(request,user_id,language):
+
+def doc_by_language(request, language):
+    try:
+        user = verify_token(request)
+
         num_of_docs = Raw_documents.objects.count()
         if num_of_docs == 0:
-            return HttpResponse("No documents in the database.")
+            return HttpResponse({})
         num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
-        if num_of_lang_docs < 1 :
-            return HttpResponse("No documents in this language.")
+        if num_of_lang_docs < 1:
+            return HttpResponse({})
 
-        try:
-            user = User.objects.filter(id=unicode(user_id))
-            l = len(user)
-            u_id = user[0].id
-        except Exception:
-            return HttpResponse("No such user in the database.")
-
-        if user[0].doc_assigned!=0:
-            doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+        if user.doc_assigned != 0:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
             s = json.loads(doc.to_json())
             return HttpResponse(s)
 
         found = False
         count = []
-        while len(count)<num_of_lang_docs:
-            i = random.randint(0,num_of_lang_docs-1)
+        while len(count) < num_of_lang_docs:
+            i = random.randint(0, num_of_lang_docs - 1)
             if i not in count:
                 count.append(i)
             doc = Raw_documents.objects.filter(language=unicode(language))
@@ -206,15 +202,17 @@ def doc_by_language(request,user_id,language):
                 break
         if found == True:
             doc[i].update(assigned=True)
-            doc[i].update(user_assigned=user[0])
+            doc[i].update(user_assigned=user)
             user.update(doc_assigned=int(doc[i].id))
             s = json.loads(doc.to_json())
             return HttpResponse(s)
         else:
-            return HttpResponse("All documents are assigned")
+            return HttpResponse({})
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
 
 
-def save_doc(request,user_id,action):
+def save_doc(request, user_id, action):
     data = json.loads(request.body)
     try:
         user = User.objects.filter(id=unicode(user_id))
@@ -239,8 +237,3 @@ def save_doc(request,user_id,action):
         doc.update(user_assigned=None)
         user.update(doc_assigned=0)
         return HttpResponse("Annotations discarded")
-
-
-
-
-
