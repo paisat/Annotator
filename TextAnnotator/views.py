@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 from TextAnnotator.models import User
 import json
@@ -9,8 +10,11 @@ import Annotator.settings as settings
 import datetime
 from rest_framework import exceptions
 from django.http import HttpResponseRedirect
-
-
+from TextAnnotator.models import Raw_documents
+import random
+from django.views.decorators.csrf import csrf_protect
+from django.shortcuts import render
+from django.core import serializers
 @csrf_exempt
 def index(request):
     try:
@@ -20,7 +24,7 @@ def index(request):
         return HttpResponseRedirect("/login/")
 
 
-@csrf_exempt
+
 def user(request):
     if request.method == 'POST':
         try:
@@ -170,19 +174,73 @@ def create_http_message(msg, status_code):
 
     return HttpResponse(json.dumps(message), status=status_code)
 
+def doc_by_language(request,user_id,language):
+        num_of_docs = Raw_documents.objects.count()
+        if num_of_docs == 0:
+            return HttpResponse("No documents in the database.")
+        num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
+        if num_of_lang_docs < 1 :
+            return HttpResponse("No documents in this language.")
+
+        try:
+            user = User.objects.filter(id=unicode(user_id))
+            l = len(user)
+            u_id = user[0].id
+        except Exception:
+            return HttpResponse("No such user in the database.")
+
+        if user[0].doc_assigned!=0:
+            doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+            s = json.loads(doc.to_json())
+            return HttpResponse(s)
+
+        found = False
+        count = []
+        while len(count)<num_of_lang_docs:
+            i = random.randint(0,num_of_lang_docs-1)
+            if i not in count:
+                count.append(i)
+            doc = Raw_documents.objects.filter(language=unicode(language))
+            if not doc[i].assigned:
+                found = True
+                break
+        if found == True:
+            doc[i].update(assigned=True)
+            doc[i].update(user_assigned=user[0])
+            user.update(doc_assigned=int(doc[i].id))
+            s = json.loads(doc.to_json())
+            return HttpResponse(s)
+        else:
+            return HttpResponse("All documents are assigned")
+
+
+def save_doc(request,user_id,action):
+    data = json.loads(request.body)
+    try:
+        user = User.objects.filter(id=unicode(user_id))
+        l = len(user)
+        u_id = user[0].id
+    except Exception:
+        return HttpResponse("No such user in the database.")
+
+    try:
+        doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
+        l = len(doc)
+        doc_id = doc[0].id
+    except Exception:
+        return HttpResponse("No doc assigned for this user.")
+
+    if action.lower() == "next":
+        doc.update(translations=str(data['translations']))
+        return HttpResponse("Annotations saved")
+    if action.lower() == "skip":
+        doc.update(translations=[])
+        doc.update(assigned=False)
+        doc.update(user_assigned=None)
+        user.update(doc_assigned=0)
+        return HttpResponse("Annotations discarded")
 
 
 
 
 
-
-
-    # def text_document(request,id):
-    #     if request.method == 'GET':
-    #         return HttpResponse(Raw_documents.objects.filter(id=id)[0].to_json())
-    #     if request.method == 'PUT':
-    #         data = json.loads(request.body.decode("utf-8"))
-    #         doc = Raw_documents.objects.filter(id=unicode(data['id']))
-    #         doc.update(translations=str(data['translations']))
-    #         #doc.save(force_insert=False)
-    #         return HttpResponse(Raw_documents.objects.filter(id=data['id'])[0].to_json())
