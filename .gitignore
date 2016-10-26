@@ -1,4 +1,7 @@
 
-.idea/workspace.xml
+.idea/modules.xml
 
 .idea/workspace.xml
+
+*.pyc
+
