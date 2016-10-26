@@ -21,8 +21,10 @@ urlpatterns = [
     url(r'^index/', views.index, name='index'),
     url(r'^admin/', admin.site.urls),
     url(r'^users/', views.user),
-    url(r'^auth-token/',views.get_auth_token),
-    url(r'^auth-token-verify/$',views.verify_token)
+    url(r'^auth-token/', views.get_auth_token),
+    url(r'^auth-token-verify/$', views.verify_token),
+    url(r'^login/', views.login),
+    url(r'^account/', views.account)
     # get random raw_data given a language
     # url(r'^(?P<language>[a-z|A-Z]+)/get_document/$', views.get_document),
     # url(r'^post_annotations/', views.post_annotations),

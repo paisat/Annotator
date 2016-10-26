@@ -105,10 +105,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 JWT_SETTINGS = {
 
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=21600),
     'JWT_SECRET_KEY': SECRET_KEY,
     'JWT_ALGORITHM': 'HS256',
-    'AUTH_HEADER_PREFIX' : 'JWT',
+    'AUTH_HEADER_PREFIX': 'JWT',
 
 }
 

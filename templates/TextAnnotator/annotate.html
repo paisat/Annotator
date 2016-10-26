@@ -10,6 +10,7 @@
     <meta name="author" content="">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.2/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
     <script src="{% static "js/underscore/underscore.js" %}"></script>
     <script src="{% static "js/annotator/utils.js" %}"></script>
     <script src="{% static "js/annotator/annotator-full.min.js" %}"></script>
@@ -21,6 +22,7 @@
     <link rel="stylesheet" href="{% static "css/annotate.css" %}">
     <link rel="stylesheet" href="{% static "css/bootstrap/bootstrap.min.css" %}">
     <script src="{% static "js/annotate.js" %}"></script>
+    <script src="{% static "js/logout.js" %}"></script>
 </head>
 <body>
 
@@ -28,15 +30,15 @@
     <div class="container">
         <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse"
-                    data-target="#bs-example-navbar-collapse-1">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
             <a class="navbar-brand" href="#">Language Annotator</a>
         </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="../account/">Account<span class="sr-only">(current)</span></a></li>
+                <li><a href="../login/" id="logout">Logout</a></li>
+            </ul>
+        </div>
+
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         </div>
@@ -72,6 +74,7 @@
     <div class="alert alert-success saveAnnotationAlert" id="saveAnnotation-alert">
         <strong>Annotation Saved</strong>
     </div>
+</div>
 
 </body>
 </html>
