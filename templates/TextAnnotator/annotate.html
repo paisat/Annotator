@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="{% static "css/bootstrap/bootstrap.min.css" %}">
     <script src="{% static "js/annotate.js" %}"></script>
     <script src="{% static "js/logout.js" %}"></script>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -54,26 +55,71 @@
 <br/>
 <div class="container">
 
+
+    <div class="alert alert-danger error" id="error-alert">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <strong>Something went wrong. Please try again</strong>
+    </div>
+
     <div class="border row row-eq-height">
-        <div class="border col-md-6">
+
+
+        <div class="form-group select-language">
+            <label for="sort" class="col-sm-3 control-label"> Select Language To Annotate: </label>
+            <div class="col-sm-5">
+                <select class="form-control " id="language-select" name="sort" id="sort">
+                </select>
+            </div>
+        </div>
+
+
+        <div class="border col-md-8 annotateTextWell">
             <div class="inline-div">
-                <label for="anotatedText">Annotate Text</label>
-                <div class="well annotatedText pull-right">
+                <label for="anotatedText" class="annotateTextLabel">Annotate Text</label>
+                <div class="well annotatedText  pull-right">
                     <p id="annotatedText"></p>
+                    <h1 class="noResults" id="noResults" class="center">No results for this language</h1>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="checkbox">
-        <label><input type="checkbox" id="areYouDoneChkBox" value="">Are you Done with Annotations ?</label>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Save Changes ?</h4>
+                </div>
+                <div class="modal-body">
+                    <p><b>Please Save or Discard Changes before Changing Language</b></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger btn-md" id="noBtn"><i class="fa fa-spinner fa-spin"></i> Discard
+                    </button>
+                    <button class="btn btn-success btn-md" id="yesBtn"><i class="fa fa-spinner fa-spin"></i> Save
+                    </button>
+                </div>
+                <div class="alert alert-danger error modal-error" id="error-alert">
+                    <strong>Something went wrong. Please try again</strong>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <button type="button" class="btn btn-success" autocomplete="off" id="saveAnnotationBtn">Save</button>
-
-    <div class="alert alert-success saveAnnotationAlert" id="saveAnnotation-alert">
-        <strong>Annotation Saved</strong>
+    <button class="btn btn-success btn-md"><i class="fa fa-spinner fa-spin"></i> Save</button>
+    <div class="pull-right col-xs-6">
+        <button class="btn btn-danger btn-md" style="margin-right: 20px;"><i class="fa fa-spinner fa-spin"></i> Skip
+        </button>
+        <button class="btn btn-success btn-md"><i class="fa fa-spinner fa-spin"></i> Next</button>
     </div>
+
+
+    {#    <div class="alert alert-success saveAnnotationAlert" id="saveAnnotation-alert">#}
+    {#        <strong>Annotation Saved</strong>#}
+    {#    </div>#}
 </div>
 
 </body>

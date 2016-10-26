@@ -1,13 +1,14 @@
-.annotatedText{
-  height: 225px;
+.annotatedText {
+    height: 225px;
+    width: 100%;
 }
 
-.select2-container,.select2-search__field {
-    width: 100%!important;
+.select2-container, .select2-search__field {
+    width: 100% !important;
 }
 
-.rtl{
-  text-align: right;
+.rtl {
+    text-align: right;
 }
 
 .select2-selection__choice {
@@ -24,14 +25,34 @@
 }
 
 .select2-search__field {
-    padding: 4px 8px!important;
+    padding: 4px 8px !important;
 }
 
 .select2-results__option {
-    font-size: 12px!important;
+    font-size: 12px !important;
 }
 
-
-.saveAnnotationAlert{
+.saveAnnotationAlert {
     margin-top: 10px;
+}
+
+.annotateTextWell {
+    margin-top: 25px;
+}
+
+.annotateTextLabel {
+    margin-bottom: 20px;
+}
+
+.error {
+    display: none;
+}
+
+.modal-error {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.noResults {
+    display: none;
 }
