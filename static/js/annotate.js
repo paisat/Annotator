@@ -7,7 +7,7 @@ var annotatePage = {
 
     tags: ['Date', 'Location'],
     annotator: null,
-    existingAnnotations: null,
+    existingAnnotations: [],
 
     init: function () {
 
@@ -45,29 +45,137 @@ var annotatePage = {
         };
 
 
-        $("#saveAnnotation-alert").hide();
+        this.loadSelectLanguageDropDownBox();
 
-        var urlLanguageParam = this.getUrlParameter('lang');
-        this.loadSelectLanguageDropDownBox(urlLanguageParam);
-        $("#saveAnnotationBtn").click(this.saveAnnotations);
+        this.getAssignedDocForUser();
+        var urlLanguageParam = this.getUrlParameter('lang')
+
+        if (urlLanguageParam != null) {
+            this.setSelectBoxLanguage(urlLanguageParam);
+            this.getAnnotations(urlLanguageParam);
+        }
+
+        $("#saveAnnotation").click(this.saveAnnotations);
+        $("#nextDocument").click(this.getNextDocument);
+        $("#skipDocument").click(this.skipDocument);
+        $("#modalYesBtn").click(this.modalYesButtonAction);
+        $("#modalNoBtn").click(this.modalNoButtonAction);
+
         console.log("annotations on page");
         console.log(this.getAnnotationsOnPage());
-
-        this.existingAnnotations = annotations;
 
 
     },
 
-    loadSelectLanguageDropDownBox: function (language) {
+    modalYesButtonAction: function () {
+
+        var action = $(".modal").attr('action');
+        var annotationsOnPage = annotatePage.getAnnotationsOnPage();
+        $.ajax({
+                type: "POST",
+                url: "../user/action/" + action + "/",
+                data: JSON.stringify(annotationsOnPage),
+                beforeSend: function (jqXHR, settings) {
+                    $("#modalYesBtn").button("loading");
+                },
+                error: function (xhr, statusText) {
+                    console.log("error");
+
+                },
+                success: function (msg) {
+                    $("#modalYesBtn").button("reset");
+                    var selectedLanguage = $("#language-select").val();
+                    window.location.href = "../index?lang=" + selectedLanguage;
+
+                }
+            }
+        );
+
+
+    },
+
+    modalNoButtonAction: function () {
+
+        var action = $(".modal").attr('action');
+
+        if (action == "next") {
+            $(".modal").modal('hide');
+        }
+        else if (action == "skip") {
+            $(".modal").modal('hide');
+        }
+
+    },
+
+    getNextDocument: function () {
+
+        annotatePage.showModal("Go to Next Document ?", "Go To Next Doc", "Stay on this Doc", "You are about to go to next Document", "next");
+
+    },
+
+    skipDocument: function () {
+
+
+        annotatePage.showModal("Skip Document", "Yes", "No", "You are about to skip document. All your saved annotations will be lost ", "skip");
+        console.log("action")
+        console.log($(".modal").attr('action'));
+
+    },
+
+    getAssignedDocForUser: function () {
+
+        var response = $.ajax({
+            type: "GET",
+            url: "../user/document/",
+            beforeSend: function (jqXHR, settings) {
+
+                annotatePage.toggleLoadingForSelectBar(true);
+
+            },
+            error: function (xhr, statusText) {
+                console.log("error");
+
+            },
+            success: function (msg) {
+                response = JSON.parse(msg);
+                annotatePage.toggleLoadingForSelectBar(false);
+
+                if (response.length != 0) {
+                    annotatePage.loadAnnotator(response);
+                    annotatePage.setSelectBoxLanguage(response[0].language);
+                }
+
+            }
+        });
+    },
+
+    toggleLoadingForSelectBar: function (show) {
+
+        if (show) {
+            $("#loadingSelect").show();
+            $("#language-select").prop("disabled", true);
+        }
+        else {
+            $("#loadingSelect").hide();
+            $("#language-select").prop("disabled", false);
+        }
+
+    },
+
+    loadSelectLanguageDropDownBox: function () {
 
         var languages = this.getLanguageList();
         $("#language-select").select2({
             data: languages
         });
 
-        $("#language-select").select2("val", language);
+        $("#language-select").select2("val", null);
         $("#language-select").on("select2:select", this.onLanguageSelect)
 
+    },
+
+    setSelectBoxLanguage: function (language) {
+        $("#language-select").select2("val", language);
     },
 
     getLanguageList: function () {
@@ -99,9 +207,10 @@ var annotatePage = {
     onLanguageSelect: function (e) {
 
         var selectedLanguage = $(this).val();
+        console.log(annotatePage.existingAnnotations);
+        console.log(annotatePage.getAnnotationsOnPage().length);
 
-        if (!( annotatePage.existingAnnotations == null ||
-            (annotatePage.existingAnnotations.translations.length == 0 && annotatePage.getAnnotationsOnPage().length == 0 )  )) {
+        if (!(annotatePage.existingAnnotations.length == 0 && annotatePage.getAnnotationsOnPage().length == 0 )) {
             // annotatePage.showModal("dasa","sasa","sasa","sasa","skip");
             console.log("show modal");
             annotatePage.showModal("sasa", "sas", "sasa", "sasa", "sasa");
@@ -120,15 +229,7 @@ var annotatePage = {
         $(".modal .modal-body").html(messageBody);
         $(".modal #noBtn").text(noMessage);
         $(".modal #yesBtn").text(yesMessage);
-
-
-        $("#yesBtn").click(function () {
-
-            console.log("click no btn");
-            console.log(action);
-
-        });
-
+        $(".modal").attr('action', action);
 
         $("#confirmModal").modal('show');
 
@@ -164,11 +265,26 @@ var annotatePage = {
             ]
         };
 
-        this.loadAnnotator(annotations1);
 
+        $.ajax({
+                type: "GET",
+                url: "../user/language/" + language + "/",
+                beforeSend: function (jqXHR, settings) {
+                    annotatePage.toggleLoadingForSelectBar(true);
+                },
+                error: function (xhr, statusText) {
+                    console.log("error");
 
-        // $("#noResults").show();
+                },
+                success: function (msg) {
+                    var response = JSON.parse(msg);
+                    console.log(response);
+                    annotatePage.toggleLoadingForSelectBar(false);
+                    annotatePage.loadAnnotator(response);
 
+                }
+            }
+        );
 
     },
 
@@ -199,7 +315,17 @@ var annotatePage = {
 
     loadAnnotator: function (textAnnotations) {
 
-        //$("#annotatedText .annotator-wrapper").append(textAnnotations[0].text);
+        console.log(textAnnotations);
+
+        if (textAnnotations.length == 0) {
+            $("#noResults").show();
+            return;
+        }
+
+        $("#noResults").hide();
+
+        textAnnotations = textAnnotations[0];
+
         this.setUpAnnotator(textAnnotations.text);
 
         if (textAnnotations.rtl) {
@@ -239,9 +365,9 @@ var annotatePage = {
 
         console.log(this.annotator);
 
-        this.annotator.subscribe('annotationCreated', this.annotatorModifiedEvent);
-        this.annotator.subscribe('annotationUpdated', this.annotatorModifiedEvent);
-        this.annotator.subscribe('annotationDeleted', this.annotatorModifiedEvent);
+        // this.annotator.subscribe('annotationCreated', this.annotatorModifiedEvent);
+        // this.annotator.subscribe('annotationUpdated', this.annotatorModifiedEvent);
+        // this.annotator.subscribe('annotationDeleted', this.annotatorModifiedEvent);
 
 
     },
@@ -271,29 +397,46 @@ var annotatePage = {
 
 
         var annotationsOnPage = annotatePage.getAnnotationsOnPage();
-        console.log(annotationsOnPage);
+        $.ajax({
+                type: "POST",
+                url: "../user/action/save/",
+                data: JSON.stringify(annotationsOnPage),
+                beforeSend: function (jqXHR, settings) {
+                    $("#saveAnnotation").button("loading");
+                },
+                error: function (xhr, statusText) {
+                    console.log("error");
 
-        $("#saveAnnotation-alert").hide();
+                },
+                success: function (msg) {
+                    $("#saveAnnotation").button("reset");
 
-        $("#saveAnnotation-alert").alert();
-        $("#saveAnnotation-alert").fadeTo(2000, 500).slideUp(500, function () {
-            $("#saveAnnotation-alert").slideUp(500);
-        });
+                    $("#saveAnnotation-alert").alert();
+                    $("#saveAnnotation-alert").fadeTo(2000, 500).slideUp(500, function () {
+                        $("#saveAnnotation-alert").slideUp(500);
+                    });
 
+                    annotationsOnPage.existingAnnotations = annotationsOnPage;
+
+                }
+            }
+        );
 
     },
 
     annotatorModifiedEvent: function () {
 
+        console.log("annotations modified");
+
         var annotationsCount = $(".annotator-hl").length;
 
         if (annotationsCount == 0) {
-            $("#saveAnnotationBtn").prop('disabled', true);
-            $("#areYouDoneChkBox").attr("disabled", true);
+            $("#saveAnnotation").prop('disabled', true);
+
         }
         else {
-            $("#saveAnnotationBtn").prop('disabled', false);
-            $("#areYouDoneChkBox").attr("disabled", false);
+            $("#saveAnnotation").prop('disabled', false);
+
         }
 
     },
@@ -302,10 +445,12 @@ var annotatePage = {
 
         var annotationTextElement = $("#annotatedText");
         annotationTextElement.text(text);
+
         annotationTextElement.annotator();
         this.annotator = $("#annotatedText").data().annotator;
         $("#annotatedText").annotator().annotator("addPlugin", "MyTags");
         this.annotator.plugins.MyTags.availableTags = this.tags;
+
 
     }
 

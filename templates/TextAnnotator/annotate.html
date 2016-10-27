@@ -70,6 +70,7 @@
                 <select class="form-control " id="language-select" name="sort" id="sort">
                 </select>
             </div>
+            <i class="fa fa-spinner fa-spin loadingSpinner" id="loadingSelect" style="font-size:24px"></i>
         </div>
 
 
@@ -78,7 +79,8 @@
                 <label for="anotatedText" class="annotateTextLabel">Annotate Text</label>
                 <div class="well annotatedText  pull-right">
                     <p id="annotatedText"></p>
-                    <h1 class="noResults" id="noResults" class="center">No results for this language</h1>
+                    <h3 class="noResults" id="noResults" class="center">No results for this language. Please select
+                        different language</h3>
                 </div>
             </div>
         </div>
@@ -97,9 +99,9 @@
                     <p><b>Please Save or Discard Changes before Changing Language</b></p>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-danger btn-md" id="noBtn"><i class="fa fa-spinner fa-spin"></i> Discard
+                    <button class="btn btn-danger btn-md" autocomplete="off" id="modalNoBtn"><i class="fa fa-spinner fa-spin"></i> Discard
                     </button>
-                    <button class="btn btn-success btn-md" id="yesBtn"><i class="fa fa-spinner fa-spin"></i> Save
+                    <button class="btn btn-success btn-md" autocomplete="off" id="modalYesBtn"><i class="fa fa-spinner fa-spin"></i> Save
                     </button>
                 </div>
                 <div class="alert alert-danger error modal-error" id="error-alert">
@@ -109,17 +111,17 @@
         </div>
     </div>
 
-    <button class="btn btn-success btn-md"><i class="fa fa-spinner fa-spin"></i> Save</button>
+    <button class="btn btn-success btn-md" id="saveAnnotation" autocomplete="off">Save</button>
     <div class="pull-right col-xs-6">
-        <button class="btn btn-danger btn-md" style="margin-right: 20px;"><i class="fa fa-spinner fa-spin"></i> Skip
+        <button class="btn btn-danger btn-md" id="skipDocument"> Skip Document
         </button>
-        <button class="btn btn-success btn-md"><i class="fa fa-spinner fa-spin"></i> Next</button>
+        <button class="btn btn-success btn-md" id="nextDocument"> Next Document</button>
     </div>
 
 
-    {#    <div class="alert alert-success saveAnnotationAlert" id="saveAnnotation-alert">#}
-    {#        <strong>Annotation Saved</strong>#}
-    {#    </div>#}
+    <div class="alert alert-success saveAnnotationAlert" id="saveAnnotation-alert">
+        <strong>Annotation Saved</strong>
+    </div>
 </div>
 
 </body>

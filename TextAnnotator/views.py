@@ -178,18 +178,20 @@ def doc_by_language(request, language):
     try:
         user = verify_token(request)
 
+        random_doc = Raw_documents._get_collection().aggregate([{'$sample': {'size': 1}}]);
+
+        print random_doc.next()
+
         num_of_docs = Raw_documents.objects.count()
         if num_of_docs == 0:
             return HttpResponse({})
         num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
         if num_of_lang_docs < 1:
-            s = json.loads("[]")
-            return HttpResponse(s)
+            return HttpResponse(json.dumps([]))
 
         if user.doc_assigned != 0:
             doc = Raw_documents.objects.filter(id=user.doc_assigned)
-            s = json.loads("["+doc.to_json()+"]")
-            return HttpResponse(s)
+            return HttpResponse(doc[0].to_json())
 
         found = False
         count = []
@@ -205,57 +207,53 @@ def doc_by_language(request, language):
             doc[i].update(assigned=True)
             doc[i].update(user_assigned=user)
             user.update(doc_assigned=int(doc[i].id))
-            s = json.loads("["+doc.to_json()+"]")
-            return HttpResponse(s)
+            return HttpResponse(doc[i].to_json())
         else:
-            s = json.loads("[]")
-            return HttpResponse(s)
+            return HttpResponse(json.dumps([]))
     except exceptions.AuthenticationFailed:
         return HttpResponseRedirect("/login/")
 
 
-def save_doc(request, user_id, action):
-    data = json.loads(request.body)
+def save_doc(request, action):
     try:
-        user = User.objects.filter(id=unicode(user_id))
-        l = len(user)
-        u_id = user[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
+        user = verify_token(request)
+        data = json.loads(request.body)
 
+        try:
+            doc = Raw_documents.objects.filter(id=unicode(user.doc_assigned))
+            l = len(doc)
+            doc_id = doc[0].id
+        except Exception:
+            s = json.loads("[]")
+            return HttpResponse(s)
+
+        if action.lower() == "save":
+            doc.update(translations=data)
+            return HttpResponse(status=200)
+        if action.lower() == "next":
+            doc.update(translations=data)
+            user.update(doc_assigned=0)
+            return HttpResponse(status=200)
+        if action.lower() == "skip":
+            doc.update(translations=[])
+            doc.update(assigned=False)
+            doc.update(user_assigned=None)
+            user.update(doc_assigned=0)
+            return HttpResponse(status=200)
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
+
+
+def assigned_doc(request):
     try:
-        doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
-        l = len(doc)
-        doc_id = doc[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
+        user = verify_token(request)
 
-    if action.lower() == "next":
-        doc.update(translations=str(data['translations']))
-        return HttpResponse("Annotations saved")
-    if action.lower() == "skip":
-        doc.update(translations=[])
-        doc.update(assigned=False)
-        doc.update(user_assigned=None)
-        user.update(doc_assigned=0)
-        return HttpResponse("Annotations discarded")
+        if user.doc_assigned != 0:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
+            return HttpResponse(doc.to_json())
+        else:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
+            return HttpResponse(doc.to_json())
 
-def assigned_doc(request,user_id):
-    try:
-        user = User.objects.filter(id=unicode(user_id))
-        l = len(user)
-        u_id = user[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
-
-    if user[0].doc_assigned != 0:
-        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
-        s = json.loads("["+doc.to_json()+"]")
-        return HttpResponse(s)
-    else:
-        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
-        s = json.loads("["+doc.to_json()+"]")
-        return HttpResponse(s)
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")

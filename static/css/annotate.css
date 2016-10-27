@@ -34,6 +34,7 @@
 
 .saveAnnotationAlert {
     margin-top: 10px;
+    display: none;
 }
 
 .annotateTextWell {
@@ -54,5 +55,9 @@
 }
 
 .noResults {
+    display: none;
+}
+
+.loadingSpinner {
     display: none;
 }
