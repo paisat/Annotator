@@ -174,24 +174,30 @@ def create_http_message(msg, status_code):
     return HttpResponse(json.dumps(message), status=status_code)
 
 
-def doc_by_language(request, language):
-    try:
-        user = verify_token(request)
+def doc_by_language(request,user_id, language):
+    #try:
+    #   user = verify_token(request)
 
-        random_doc = Raw_documents._get_collection().aggregate([{'$sample': {'size': 1}}]);
-
-        print random_doc.next()
+        try:
+            user = User.objects.filter(id=unicode(user_id))
+            l = len(user)
+            u_id = user[0].id
+        except Exception:
+            s = json.loads("[]")
+            return HttpResponse(s)
 
         num_of_docs = Raw_documents.objects.count()
         if num_of_docs == 0:
             return HttpResponse({})
         num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
         if num_of_lang_docs < 1:
-            return HttpResponse(json.dumps([]))
+            s = json.loads("[]")
+            return HttpResponse(s)
 
-        if user.doc_assigned != 0:
-            doc = Raw_documents.objects.filter(id=user.doc_assigned)
-            return HttpResponse(doc[0].to_json())
+        if user[0].doc_assigned != 0:
+            doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+            s = json.loads("["+doc.to_json()+"]")
+            return HttpResponse(s)
 
         found = False
         count = []
@@ -205,55 +211,84 @@ def doc_by_language(request, language):
                 break
         if found == True:
             doc[i].update(assigned=True)
-            doc[i].update(user_assigned=user)
-            user.update(doc_assigned=int(doc[i].id))
-            return HttpResponse(doc[i].to_json())
+            doc[i].update(user_assigned=user[0].id)
+            user[0].update(doc_assigned=int(doc[i].id))
+            s = json.loads("["+doc.to_json()+"]")
+            return HttpResponse(s)
         else:
-            return HttpResponse(json.dumps([]))
-    except exceptions.AuthenticationFailed:
-        return HttpResponseRedirect("/login/")
-
-
-def save_doc(request, action):
-    try:
-        user = verify_token(request)
-        data = json.loads(request.body)
-
-        try:
-            doc = Raw_documents.objects.filter(id=unicode(user.doc_assigned))
-            l = len(doc)
-            doc_id = doc[0].id
-        except Exception:
             s = json.loads("[]")
             return HttpResponse(s)
-
-        if action.lower() == "save":
-            doc.update(translations=data)
-            return HttpResponse(status=200)
-        if action.lower() == "next":
-            doc.update(translations=data)
-            user.update(doc_assigned=0)
-            return HttpResponse(status=200)
-        if action.lower() == "skip":
-            doc.update(translations=[])
-            doc.update(assigned=False)
-            doc.update(user_assigned=None)
-            user.update(doc_assigned=0)
-            return HttpResponse(status=200)
-    except exceptions.AuthenticationFailed:
-        return HttpResponseRedirect("/login/")
+    #except exceptions.AuthenticationFailed:
+    #    return HttpResponseRedirect("/login/")
 
 
-def assigned_doc(request):
+def save_doc(request, user_id, action):
+    data = json.loads(request.body)
     try:
-        user = verify_token(request)
+        user = User.objects.filter(id=unicode(user_id))
+        l = len(user)
+        u_id = user[0].id
+    except Exception:
+        s = json.loads("[]")
+        return HttpResponse(s)
 
-        if user.doc_assigned != 0:
-            doc = Raw_documents.objects.filter(id=user.doc_assigned)
-            return HttpResponse(doc.to_json())
-        else:
-            doc = Raw_documents.objects.filter(id=user.doc_assigned)
-            return HttpResponse(doc.to_json())
+    try:
+        doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
+        l = len(doc)
+        doc_id = doc[0].id
+    except Exception:
+        s = json.loads("[]")
+        return HttpResponse(s)
 
-    except exceptions.AuthenticationFailed:
-        return HttpResponseRedirect("/login/")
+    if action.lower() == "save":
+        doc.update(translations=str(data['translations']))
+        return HttpResponse("Annotations saved")
+    if action.lower() == "next":
+        doc.update(translations=str(data['translations']))
+        user.update(doc_assigned=0)
+        return HttpResponse("Annotations saved")
+    if action.lower() == "skip":
+        doc.update(translations=[])
+        doc.update(assigned=False)
+        doc.update(user_assigned=None)
+        user.update(doc_assigned=0)
+        return HttpResponse("Annotations discarded")
+
+def assigned_doc(request,user_id):
+    try:
+        user = User.objects.filter(id=unicode(user_id))
+        l = len(user)
+        u_id = user[0].id
+    except Exception:
+        s = json.loads("[]")
+        return HttpResponse(s)
+
+    if user[0].doc_assigned != 0:
+        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+        s = json.loads("["+doc.to_json()+"]")
+        return HttpResponse(s)
+    else:
+        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
+        s = json.loads("[]")
+        return HttpResponse(s)
+
+def remove_user(request,user_id):
+    try:
+        user = User.objects.filter(id=unicode(user_id))
+        l = len(user)
+        u_id = user[0].id
+    except Exception:
+        s = json.loads("[]")
+        return HttpResponse(s)
+
+    if user[0].doc_assigned != 0:
+        doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
+        doc.update(translations=[])
+        doc.update(assigned=False)
+        doc.update(user_assigned=None)
+        user.update(doc_assigned=0)
+        user.delete()
+        #delete user
+    else:
+        #delete user
+        user.delete()

@@ -30,6 +30,10 @@ class Raw_documents(Document):
     user_assigned = ReferenceField(User)
     rtl = BooleanField()
     assigned = BooleanField(default=False)
+    docs_completed = ListField()
+    docs_skipped = ListField()
 
-class Users_docs(Document):
-    user_id = IntField(primary_key=True)
+class Languages(Document):
+    lang_id = StringField(primary_key=True)
+    name = StringField()
+    rtl = BooleanField(default=False)
