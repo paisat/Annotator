@@ -1,0 +1,23 @@
+.changePassword {
+    display: none;
+}
+
+#passwordChangeError {
+    display: none;
+}
+
+#login-error {
+    display: none;
+}
+
+#forgotPasswordForm {
+    display: none;
+}
+
+#forgotPasswordError {
+    display: none;
+}
+
+#forgotPasswordSuccessMsg {
+    display: none;
+}

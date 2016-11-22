@@ -24,8 +24,10 @@ urlpatterns = [
     url(r'^auth-token/', views.get_auth_token),
     url(r'^auth-token-verify/$', views.verify_token),
     url(r'^login/', views.login),
-    url(r'^account/', views.account),
-    url(r'^user/language/(?P<language>[a-z|A-Z]+)/$', views.doc_by_language),
+    url(r'^account/$', views.account),
+    url(r'^user/language/(?P<language>[a-z|A-Z]*)/$', views.doc_by_language),
     url(r'^user/action/(?P<action>[a-z|A-Z]+)/$', views.save_doc),
-    url(r'^user/document/$', views.assigned_doc)
+    url(r'^user/document/$', views.assigned_doc),
+    url(r'^account/changepassword/$', views.change_password),
+    url(r'^user/forgotPassword/$', views.forgot_password)
 ]

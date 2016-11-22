@@ -8,8 +8,9 @@ var accountPage = {
     init: function () {
 
         this.validateAdminTranslatorForm();
+        this.validatePasswordForm();
         $("#addAdminTranslatorSubmitBtn").click(this.addAdminTranslator);
-
+        $("#updatePassword").click(this.updatePassword);
     },
 
     addAdminTranslator: function () {
@@ -21,15 +22,11 @@ var accountPage = {
             var name = $("#name").val().trim();
             var email = $("#email").val().trim();
             var role = $("#role").val().trim();
-            var password = "hello";
-
-
             var body = {}
 
             body.name = name;
             body.email = email;
             body.role = role;
-            body.password = password;
 
             body = JSON.stringify(body)
 
@@ -53,6 +50,75 @@ var accountPage = {
 
 
         }
+
+    },
+
+    updatePassword: function () {
+
+        if ($("#passwordForm").valid()) {
+
+            var body = {}
+
+            var newPassword = $("#newPassword").val().trim();
+            body.newPassword = newPassword;
+            body = JSON.stringify(body);
+
+            $.ajax({
+                    type: "POST",
+                    url: "/account/changepassword/",
+                    data: body,
+                    beforeSend: function (jqXHR, settings) {
+                        $("#updatePassword").button("loading...");
+                        $("#passwordChangeError").hide();
+                    },
+                    error: function (xhr, statusText) {
+                        console.log("error");
+                        $("#updatePassword").button("reset");
+                        $("#passwordChangeError").show();
+                    },
+                    success: function (response) {
+                        $("#updatePassword").button("reset");
+                        $.removeCookie('token', {path: '/'});
+                        var mapForm = $('<form id="mapform" action="/login/" method="POST"></form>');
+                        mapForm.append('<input type="hidden" name="passwordChange" id="passwordChange" value="true" />');
+                        $('body').append(mapForm);
+                        mapForm.submit();
+                    }
+                }
+            );
+
+        }
+
+    },
+
+    validatePasswordForm: function () {
+
+        console.log("validate password form");
+
+        $("#passwordForm").validate({
+            rules: {
+                newPassword: {
+                    required: true,
+                    minlength: 6,
+                    maxlength: 15,
+
+                },
+
+                confirmPassword: {
+                    equalTo: "#newPassword",
+                    minlength: 6,
+                    maxlength: 15
+                }
+
+            },
+            messages: {
+                password: {
+                    required: "the password is required"
+                }
+            }
+
+        });
+
 
     },
 
