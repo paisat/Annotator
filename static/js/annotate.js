@@ -409,14 +409,15 @@ var annotatePage = {
             $("#annotator-tags-select").off("select2:select").on("select2:select", function () {
 
 
-                if (($("#annotator-field-0").val().length == 0 && $("#annotator-tags-select").val() == null) ||
+                if ($("#annotator-tags-select").val() == 'untranslatable') {
+                    $(".annotator-save").prop("disabled", false);
+                }
+                else if (($("#annotator-field-0").val().length == 0 && $("#annotator-tags-select").val() == null) ||
                     ($("#annotator-field-0").val().length == 0 || $("#annotator-tags-select").val() == null)) {
 
                     $(".annotator-save").prop("disabled", true);
-
                 }
                 else {
-
                     $(".annotator-save").prop("disabled", false);
                 }
             });
