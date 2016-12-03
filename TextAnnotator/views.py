@@ -1,6 +1,6 @@
 import json
 import random
-
+import yaml
 import bcrypt
 import datetime
 import jwt
@@ -292,3 +292,42 @@ def remove_user(request,user_id):
     else:
         #delete user
         user.delete()
+    return HttpResponse()
+
+def adddoc(request):
+    data = json.loads(request.body)
+    language = data["language"]
+    text = data["document"]
+    rtl = data["rtl"]
+    recs = Raw_documents.objects()
+    ids = []
+    for rec in recs():
+        ids.append(rec.id)
+    new_id = max(ids) +1
+    try :
+        doc = Raw_documents.objects.create(language=language,text=text,id=new_id,rtl=rtl)
+    except Exception:
+        return HttpResponse("Some problem encountered while saving document.")
+
+    return HttpResponse()
+
+
+def allusers(request):
+    return HttpResponse(User.objects.to_json())
+
+def alldocs(request):
+    return HttpResponse(Raw_documents.objects.to_json())
+
+
+def all_translated_docs(request):
+    docs = Raw_documents.objects.filter(translations=[])
+    ids =[ x.id for x in Raw_documents.objects.all() if x not in docs]
+    #print new_docs
+    new_docs = []
+    for i in ids:
+        new_docs.append(Raw_documents.objects.filter(id=i)[0])
+    str = ""
+    for n in new_docs:
+        str += n.to_json()
+    #return HttpResponse( json.loads("["+str+"]"))
+    return HttpResponse(yaml.safe_load("["+str+"]"))

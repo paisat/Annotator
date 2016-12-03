@@ -28,7 +28,7 @@ class Raw_documents(Document):
     language = StringField(max_length=50)
     translations = ListField()
     user_assigned = ReferenceField(User)
-    rtl = BooleanField()
+    rtl = BooleanField(default=False)
     assigned = BooleanField(default=False)
     docs_completed = ListField()
     docs_skipped = ListField()
