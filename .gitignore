@@ -5,3 +5,17 @@
 
 *.pyc
 
+
+.idea/modules.xml
+
+.idea/modules.xml
+
+.idea/workspace.xml
+
+~$nguages.json.docx
+
+Annotator/settings.pyc
+
+Annotator/wsgi.pyc
+
+Annotator/urls.pyc
