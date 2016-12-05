@@ -1,7 +1,11 @@
-#addFormError{
+#addFormError {
     display: none;
 }
 
-#adminTranslatorSaved{
+#adminTranslatorSaved {
+    display: none;
+}
+
+#passwordChangeError {
     display: none;
 }

@@ -1,6 +1,8 @@
 import json
+
 import random
 import yaml
+
 import bcrypt
 import datetime
 import jwt
@@ -13,6 +15,14 @@ from rest_framework import exceptions
 import Annotator.settings as settings
 from TextAnnotator.models import Raw_documents
 from TextAnnotator.models import User
+from TextAnnotator.models import Languages
+from django.core.mail import send_mail
+import string
+import random
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger("Annotator Logger")
 
 
 @csrf_exempt
@@ -44,62 +54,87 @@ def user(request):
             user = User.objects.create(name=user_data['name'], email=user_data['email'], role=user_data['role'])
             user.save()
 
+            random_password = ''.join(
+                random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(10))
+
             user_id = str(user.id)
             passwd_salt = bcrypt.gensalt()
-            combo_password = user_id + passwd_salt + user_data['password'].encode('utf-8')
+            combo_password = user_id + passwd_salt + random_password.encode('utf-8')
             hashed_password = bcrypt.hashpw(combo_password, passwd_salt)
             user.password = hashed_password
             user.salt = passwd_salt
             user.save()
 
+            send_mail('Welcome To Language Annotator',
+                      'Log in using these credentials \n email = ' + user_data[
+                          'email'] + '\n password = ' + random_password + '\n Log in Link : ' + 'http://52.24.230.241:8085/login/',
+                      'sarvothp@usc.edu', [user_data['email']],
+                      fail_silently=False)
+
             return HttpResponse(status=200)
         except exceptions.AuthenticationFailed:
             return HttpResponseRedirect("/login/")
         except:
-            error_msg = dict()
-            error_msg["message"] = "Something went wrong, Please try again"
-            return HttpResponse(json.dumps(error_msg), status=500)
+            logger.exception("Something went wrong")
+            return create_http_message("Something went wrong!. Please try again.", status_code=500)
 
 
 @csrf_exempt
 def get_auth_token(request):
-    if request.method == 'POST':
-        request_data = json.loads(request.body)
+    try:
 
-        if not is_auth_request_data_valid(request_data):
-            return create_http_message("User name and password required", 400)
+        if request.method == 'POST':
+            request_data = json.loads(request.body)
 
-        existing_user = User.objects(email=request_data['email'])
+            if not is_auth_request_data_valid(request_data):
+                return create_http_message("User name and password required", 400)
 
-        if len(existing_user) == 0:
-            return create_http_message("Username / password doesn't match", 401)
+            existing_user = User.objects(email=request_data['email'])
 
-        existing_user = existing_user[0]
+            if len(existing_user) == 0:
+                return create_http_message("Username / password doesn't match", 401)
 
-        password_hash = bcrypt.hashpw(
-            str(existing_user.id) + existing_user.salt.encode('utf-8') + request_data['password'].encode('utf-8'),
-            existing_user.salt.encode('utf-8'))
+            existing_user = existing_user[0]
 
-        if not password_hash == existing_user.password:
-            return create_http_message("Username / password doesn't match", 401)
+            password_hash = bcrypt.hashpw(
+                str(existing_user.id) + existing_user.salt.encode('utf-8') + request_data['password'].encode('utf-8'),
+                existing_user.salt.encode('utf-8'))
 
-        payload = {
-            'email': existing_user.email,
-            'exp': datetime.datetime.utcnow() + settings.JWT_SETTINGS['JWT_EXPIRATION_DELTA']
-        }
+            if not password_hash == existing_user.password:
+                return create_http_message("Username / password doesn't match", 401)
 
-        jwt_token = jwt.encode(
-            payload,
-            settings.JWT_SETTINGS['JWT_SECRET_KEY'],
-            settings.JWT_SETTINGS['JWT_ALGORITHM']
-        ).decode('utf-8')
+            payload = {
+                'email': existing_user.email,
+                'exp': datetime.datetime.utcnow() + settings.JWT_SETTINGS['JWT_EXPIRATION_DELTA']
+            }
 
-        token = {
-            'token': jwt_token,
-            'user_email': existing_user.email
-        }
+            jwt_token = jwt.encode(
+                payload,
+                settings.JWT_SETTINGS['JWT_SECRET_KEY'],
+                settings.JWT_SETTINGS['JWT_ALGORITHM']
+            ).decode('utf-8')
 
-        return HttpResponse(json.dumps(token), status=200)
+            token = {
+                'token': jwt_token,
+                'user_email': existing_user.email
+            }
+
+            message = dict()
+            message['initial_password_changed'] = existing_user.initial_password_changed
+
+            auth_response = HttpResponse(json.dumps(message))
+            set_response_cookie(auth_response, "token", token['token'])
+
+            return auth_response
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something went wrong!. Please try again.", status_code=500)
+
+
+def set_response_cookie(response, key, value):
+    expires = datetime.datetime.strftime(datetime.datetime.utcnow() + settings.JWT_SETTINGS['JWT_EXPIRATION_DELTA'],
+                                         "%a, %d-%b-%Y %H:%M:%S GMT")
+    response.set_cookie(key, value, expires=expires)
 
 
 def verify_token(request):
@@ -148,14 +183,25 @@ def verify_token(request):
         return exceptions.AuthenticationFailed("Username/passowrd doesn't match")
 
 
-def login(request):
-    return render(request, 'TextAnnotator/login.html')
+def login(request, password_change=False):
+    if request.POST:
+
+        if 'passwordChange' in request.POST:
+            password_change = bool(str(request.POST['passwordChange']))
+
+    return render(request, 'TextAnnotator/login.html', {'password_change': password_change})
 
 
 def account(request):
     try:
         user = verify_token(request)
-        return render(request, 'TextAnnotator/account.html')
+
+        is_admin = False
+
+        if user.role == 'admin':
+            is_admin = True
+
+        return render(request, 'TextAnnotator/account.html', context={'is_admin': is_admin})
     except exceptions.AuthenticationFailed:
         return HttpResponseRedirect("/login/")
 
@@ -174,103 +220,164 @@ def create_http_message(msg, status_code):
     return HttpResponse(json.dumps(message), status=status_code)
 
 
-def doc_by_language(request,user_id, language):
-    #try:
-    #   user = verify_token(request)
+def doc_by_language(request, language):
+    try:
+        user = verify_token(request)
+
+        if user.doc_assigned != 0:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
+            return HttpResponse(doc.to_json())
+
+        if language != 'assigned':
+
+            random_doc = Raw_documents._get_collection().aggregate(
+                [{'$match': {'assigned': False, 'language': language}}, {'$sample': {'size': 1}}])
+
+            doc = None
+
+            for document in random_doc:
+                doc = document
+
+            if not doc:
+                return HttpResponse(json.dumps([]))
+
+            doc = Raw_documents.objects.filter(id=doc['_id'])
+            doc[0].update(assigned=True)
+            doc[0].update(user_assigned=user)
+            user.update(doc_assigned=int(doc[0].id))
+
+            return HttpResponse(doc.to_json())
+
+        return HttpResponse(json.dumps([]))
+
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something went wrong!. Please try again.", status_code=500)
+
+def change_password(request):
+    try:
+
+        user = verify_token(request)
+        request_data = json.loads(request.body)
+
+        newPassword = request_data['newPassword']
+
+        if not newPassword or not (len(newPassword) >= 6 and len(newPassword) <= 15):
+            raise Exception()
+
+        user_id = str(user.id)
+        passwd_salt = bcrypt.gensalt()
+        combo_password = user_id + passwd_salt + newPassword.encode('utf-8')
+        hashed_password = bcrypt.hashpw(combo_password, passwd_salt)
+        user.password = hashed_password
+        user.salt = passwd_salt
+
+        if not user.initial_password_changed:
+            user.initial_password_changed = True
+
+        user.save()
+
+        return HttpResponse(status=200)
+
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
+    except exceptions.PermissionDenied:
+        return create_http_message("Current Password is wrong", exceptions.PermissionDenied.status_code)
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something Went Wrong. Please Try again", 500)
+
+
+def save_doc(request, action):
+    try:
+        user = verify_token(request)
+        data = json.loads(request.body)
 
         try:
-            user = User.objects.filter(id=unicode(user_id))
-            l = len(user)
-            u_id = user[0].id
+            doc = Raw_documents.objects.filter(id=unicode(user.doc_assigned))
+            l = len(doc)
+            doc_id = doc[0].id
         except Exception:
             s = json.loads("[]")
             return HttpResponse(s)
 
-        num_of_docs = Raw_documents.objects.count()
-        if num_of_docs == 0:
-            return HttpResponse({})
-        num_of_lang_docs = Raw_documents.objects.filter(language=unicode(language)).count()
-        if num_of_lang_docs < 1:
-            s = json.loads("[]")
-            return HttpResponse(s)
+        if action.lower() == "save":
+            doc.update(translations=data)
+            return HttpResponse(status=200)
+        if action.lower() == "next":
 
-        if user[0].doc_assigned != 0:
-            doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
-            s = json.loads("["+doc.to_json()+"]")
-            return HttpResponse(s)
+            if len(data) == 0:
+                doc.update(assigned=False)
 
-        found = False
-        count = []
-        while len(count) < num_of_lang_docs:
-            i = random.randint(0, num_of_lang_docs - 1)
-            if i not in count:
-                count.append(i)
-            doc = Raw_documents.objects.filter(language=unicode(language))
-            if not doc[i].assigned:
-                found = True
-                break
-        if found == True:
-            doc[i].update(assigned=True)
-            doc[i].update(user_assigned=user[0].id)
-            user[0].update(doc_assigned=int(doc[i].id))
-            s = json.loads("["+doc.to_json()+"]")
-            return HttpResponse(s)
+            doc.update(translations=data)
+            user.update(doc_assigned=0)
+            return HttpResponse(status=200)
+        if action.lower() == "skip":
+            doc.update(translations=[])
+            doc.update(assigned=False)
+            doc.update(user_assigned=None)
+            user.update(doc_assigned=0)
+            return HttpResponse(status=200)
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something Went Wrong", status_code=500)
+
+
+def forgot_password(request):
+    try:
+        data = json.loads(request.body)
+        existing_user = User.objects(email=data['email'])
+
+        if len(existing_user) != 0:
+            existing_user = existing_user[0]
+            existing_user.initial_password_changed = False
+
+            random_password = ''.join(
+                random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(10))
+
+            user_id = str(existing_user.id)
+            passwd_salt = bcrypt.gensalt()
+            combo_password = user_id + passwd_salt + random_password.encode('utf-8')
+            hashed_password = bcrypt.hashpw(combo_password, passwd_salt)
+            existing_user.password = hashed_password
+            existing_user.salt = passwd_salt
+            existing_user.save()
+
+            send_mail('Language Annotator password has been reset',
+                      'Log in using these credentials \n email = ' + existing_user[
+                          'email'] + '\n password = ' + random_password + '\n Log in Link : ' + 'http://52.24.230.241:8085/login/',
+                      'sarvothp@usc.edu', [existing_user['email']],
+                      fail_silently=False)
+
+            return create_http_message("", status_code=200)
         else:
-            s = json.loads("[]")
-            return HttpResponse(s)
-    #except exceptions.AuthenticationFailed:
-    #    return HttpResponseRedirect("/login/")
+            return create_http_message("", status_code=200)
 
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something went wrong!. Please try again.", status_code=500)
 
-def save_doc(request, user_id, action):
-    data = json.loads(request.body)
+def assigned_doc(request):
     try:
-        user = User.objects.filter(id=unicode(user_id))
-        l = len(user)
-        u_id = user[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
+        user = verify_token(request)
 
-    try:
-        doc = Raw_documents.objects.filter(id=unicode(user[0].doc_assigned))
-        l = len(doc)
-        doc_id = doc[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
+        if user.doc_assigned != 0:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
+            return HttpResponse(doc.to_json())
+        else:
+            doc = Raw_documents.objects.filter(id=user.doc_assigned)
+            return HttpResponse(doc.to_json())
 
-    if action.lower() == "save":
-        doc.update(translations=str(data['translations']))
-        return HttpResponse("Annotations saved")
-    if action.lower() == "next":
-        doc.update(translations=str(data['translations']))
-        user.update(doc_assigned=0)
-        return HttpResponse("Annotations saved")
-    if action.lower() == "skip":
-        doc.update(translations=[])
-        doc.update(assigned=False)
-        doc.update(user_assigned=None)
-        user.update(doc_assigned=0)
-        return HttpResponse("Annotations discarded")
+    except exceptions.AuthenticationFailed:
+        return HttpResponseRedirect("/login/")
+    except:
+        logger.exception("Something went wrong")
+        return create_http_message("Something went wrong!. Please try again.", status_code=500)
 
-def assigned_doc(request,user_id):
-    try:
-        user = User.objects.filter(id=unicode(user_id))
-        l = len(user)
-        u_id = user[0].id
-    except Exception:
-        s = json.loads("[]")
-        return HttpResponse(s)
-
-    if user[0].doc_assigned != 0:
-        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
-        s = json.loads("["+doc.to_json()+"]")
-        return HttpResponse(s)
-    else:
-        doc = Raw_documents.objects.filter(id=user[0].doc_assigned)
-        s = json.loads("[]")
-        return HttpResponse(s)
 
 def remove_user(request,user_id):
     try:
@@ -307,6 +414,8 @@ def adddoc(request):
     try :
         doc = Raw_documents.objects.create(language=language,text=text,id=new_id,rtl=rtl)
     except Exception:
+        print "here exception"
+        logger.exception("something wrong ")
         return HttpResponse("Some problem encountered while saving document.")
 
     return HttpResponse()
@@ -331,3 +440,9 @@ def all_translated_docs(request):
         str += n.to_json()
     #return HttpResponse( json.loads("["+str+"]"))
     return HttpResponse(yaml.safe_load("["+str+"]"))
+
+def languages(request):
+    l = Languages.objects.to_json()
+    l = l.replace("_id","id")
+    l = l.replace("name", "text")
+    return HttpResponse(l)

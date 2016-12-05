@@ -1,11 +1,8 @@
 Annotator.Plugin.MyTags = (function (_super) {
     __extends(MyTags, _super);
-    console.log(_super);
+
 
     function MyTags() {
-        console.log("My tags");
-        console.log(this);
-        console.log(MyTags.__super__);
         this.setAnnotationMyTags = __bind(this.setAnnotationMyTags, this);
         this.updateField = __bind(this.updateField, this);
         return MyTags.__super__.constructor.apply(this, arguments);
@@ -20,7 +17,7 @@ Annotator.Plugin.MyTags = (function (_super) {
     MyTags.prototype.field = null;
     MyTags.prototype.input = null;
     MyTags.prototype.pluginInit = function () {
-        console.log("plugin init");
+
         if (!Annotator.supported()) {
             return;
         }
@@ -33,8 +30,7 @@ Annotator.Plugin.MyTags = (function (_super) {
         return this.input = $(this.field).find(':input');
     };
     MyTags.prototype.updateField = function (field, annotation) {
-        console.log("update field");
-        console.log(this.availableTags);
+
         var allTags = _.union(annotation.tags, this.availableTags);
         tagHTML = "<select id='annotator-tags-select' multiple>";
         for (j = 0, len = allTags.length; j < len; j++) {
@@ -51,13 +47,14 @@ Annotator.Plugin.MyTags = (function (_super) {
         $(this.field).html(tagHTML);
         $(this.field).find("#annotator-tags-select").select2({
             multiple: false,
-            tags: true,
-            placeholder: 'choose multiple tags'
+            tags: false,
+            placeholder: 'Choose the type of annotaion'
         });
+        $(this.field).find("#annotator-tags-select").select2('val', null);
         return this.input;
     };
     MyTags.prototype.setAnnotationMyTags = function (field, annotation) {
-        console.log("set annotation my tags");
+
         var tags = [];
         $(this.field).find('select :selected').each(function (i, selected) {
             tags[i] = $(selected).text();
@@ -65,10 +62,7 @@ Annotator.Plugin.MyTags = (function (_super) {
         return annotation.tags = tags;
     };
     MyTags.prototype.updateViewer = function (field, annotation) {
-        console.log("update viewer");
-        console.log(annotation.tags);
 
-        console.log(field);
         field = $(field);
         if (annotation.tags && $.isArray(annotation.tags) && annotation.tags.length) {
             return field.addClass('annotator-tags').html(function () {
