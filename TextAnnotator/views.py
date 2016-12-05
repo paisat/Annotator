@@ -410,7 +410,10 @@ def adddoc(request):
     ids = []
     for rec in recs():
         ids.append(rec.id)
-    new_id = max(ids) +1
+    if len(ids)>0:
+        new_id = max(ids) +1
+    else:
+        new_id=1
     try :
         doc = Raw_documents.objects.create(language=language,text=text,id=new_id,rtl=rtl)
     except Exception:
