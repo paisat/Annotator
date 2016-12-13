@@ -68,7 +68,7 @@ def user(request):
             send_mail('Welcome To Language Annotator',
                       'Log in using these credentials \n email = ' + user_data[
                           'email'] + '\n password = ' + random_password + '\n Log in Link : ' + 'http://52.24.230.241:8085/login/',
-                      'sarvothp@usc.edu', [user_data['email']],
+                      'knight@isi.edu', [user_data['email']],
                       fail_silently=False)
 
             return HttpResponse(status=200)
@@ -350,7 +350,7 @@ def forgot_password(request):
             send_mail('Language Annotator password has been reset',
                       'Log in using these credentials \n email = ' + existing_user[
                           'email'] + '\n password = ' + random_password + '\n Log in Link : ' + 'http://52.24.230.241:8085/login/',
-                      'sarvothp@usc.edu', [existing_user['email']],
+                      'knight@isi.edu', [existing_user['email']],
                       fail_silently=False)
 
             return create_http_message("", status_code=200)

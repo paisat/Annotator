@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'f(g=th_m&^vv6m#t00zbq8!xw&#hxygv*gi(9b42f(at*k(f+*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['52.24.230.241']
 
@@ -52,8 +52,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'Annotator.urls'
 
 EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'sarvothp'
-EMAIL_HOST_PASSWORD = 'sendgrid123@'
+EMAIL_HOST_USER = 'AnnotatorISI'
+EMAIL_HOST_PASSWORD = 'Annotatorisi123@'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
@@ -142,5 +142,5 @@ STATIC_URL = '/static/'
 
 from mongoengine import connect
 
-#connect('Annotator', host='127.0.0.1', port=8086,username='sarpai',password='isi123@')
-connect('Annotator')
+connect('Annotator', host='127.0.0.1', port=8086, username='sarpai', password='isi123@')
+# connect('Annotator')
